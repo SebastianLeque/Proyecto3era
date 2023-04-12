@@ -5,94 +5,99 @@ const total = document.getElementById('cart-total-value');
 const number = document.getElementById('cart-count-info');
 let cartItemID = 1;
 
-window.addEventListener('DOMContentLoaded', () => {
-    loadJSON();
-    loadCart();
-});
+eventListeners();
 
-document.querySelector('.navbar-toggler').addEventListener('click', () => {
-    document.querySelector('.navbar-collapse').classList.toggle('show-navbar');
-});
+function eventListeners(){
+    window.addEventListener('DOMContentLoaded', () => {
+        loadJSON();
+        loadCart();
+    });
+ 
+    document.querySelector('.navbar-toggler').addEventListener('click', () => {
+        document.querySelector('.navbar-collapse').classList.toggle('show-navbar');
+    });
 
-document.getElementById('cart-btn').addEventListener('click', () => {
-    container.classList.toggle('show-cart-container');
-});
+    document.getElementById('cart-btn').addEventListener('click', () => {
+        container.classList.toggle('show-cart-container');
+    });
 
-list.addEventListener('click', (e) => {
-    if (e.target.classList.contains('add-to-cart-btn')) {
-        const product = e.target.closest('.product-item');
-        const productInfo = {
-            id: cartItemID,
-            imgSrc: product.querySelector('.product-img img').src,
-            name: product.querySelector('.product-name').textContent,
-            category: product.querySelector('.product-category').textContent,
-            price: product.querySelector('.product-price').textContent
-        };
-        cartItemID++;
-        addTocart(productInfo);
-        saveProductInStorage(productInfo);
-    }
-});
+    list.addEventListener('click', purchaseProduct);
 
-cart.addEventListener('click', (e) => {
-    if (e.target.classList.contains('cart-item-del-btn') || e.target.parentNode.classList.contains('cart-item-del-btn')) {
-        const cartItem = e.target.closest('.cart-item');
-        cartItem.remove();
-        const products = getProductFromStorage();
-        const updatedProducts = products.filter((product) => product.id !== parseInt(cartItem.dataset.id));
-        localStorage.setItem('products', JSON.stringify(updatedProducts));
-        updateCartInfo();
-    }
-});
-
-function updateCartInfo() {
-    const { productCount, total } = findCartInfo();
-    number.textContent = productCount;
-    total.textContent = total.toFixed(2);
+    cart.addEventListener('click', deleteProduct);
 }
 
-function loadJSON() {
+function updateCartInfo(){
+    let cartInfo = findCartInfo();
+    number.textContent = cartInfo.productCount;
+    total.textContent = cartInfo.total;
+}
+
+function loadJSON(){
     fetch('vinos.json')
-        .then((response) => response.json())
-        .then((data) => {
-            const html = data
-                .map(
-                    (product) => `
-                    <div class="product-item">
-                        <div class="product-img">
-                            <img src="${product.imgSrc}" alt="product image" />
-                            <button type="button" class="add-to-cart-btn">
-                                <i class="fas fa-shopping-cart"></i>Add To Cart
-                            </button>
-                        </div>
-
-                        <div class="product-content">
-                            <h3 class="product-name">${product.name}</h3>
-                            <span class="product-category">${product.category}</span>
-                            <p class="product-price">$${product.price}</p>
-                        </div>
+    .then(response => response.json())
+    .then(data =>{
+        let html = '';
+        data.forEach(product => {
+            html += `
+                <div class = "product-item">
+                    <div class = "product-img">
+                        <img src = "${product.imgSrc}" alt = "product image">
+                        <button type = "button" class = "add-to-cart-btn">
+                            <i class = "fas fa-shopping-cart"></i>Add To Cart
+                        </button>
                     </div>
-                `
-                )
-                .join('');
-            list.innerHTML = html;
-        })
-        
+
+                    <div class = "product-content">
+                        <h3 class = "product-name">${product.name}</h3>
+                        <span class = "product-category">${product.category}</span>
+                        <p class = "product-price">$${product.price}</p>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    })
+    .catch(error => {
+        alert(`User live server or local server`);
+    })
 }
 
-function addTocart(product) {
+
+function purchaseProduct(e){
+    if(e.target.classList.contains('add-to-cart-btn')){
+        let product = e.target.parentElement.parentElement;
+        getProductInfo(product);
+    }
+}
+
+
+function getProductInfo(product){
+    let productInfo = {
+        id: cartItemID,
+        imgSrc: product.querySelector('.product-img img').src,
+        name: product.querySelector('.product-name').textContent,
+        category: product.querySelector('.product-category').textContent,
+        price: product.querySelector('.product-price').textContent
+    }
+    cartItemID++;
+    addTocart(productInfo);
+    saveProductInStorage(productInfo);
+}
+
+function addTocart(product){
     const cartItem = document.createElement('div');
     cartItem.classList.add('cart-item');
     cartItem.setAttribute('data-id', `${product.id}`);
     cartItem.innerHTML = `
-        <img src="${product.imgSrc}" alt="product image" />
-        <div class="cart-item-info">
-            <h3 class="cart-item-name">${product.name}</h3>
-            <span class="cart-item-category">${product.category}</span>
-            <span class="cart-item-price">${product.price}</span>
+        <img src = "${product.imgSrc}" alt = "product image">
+        <div class = "cart-item-info">
+            <h3 class = "cart-item-name">${product.name}</h3>
+            <span class = "cart-item-category">${product.category}</span>
+            <span class = "cart-item-price">${product.price}</span>
         </div>
-        <button type="button" class="cart-item-del-btn">
-            <i class="fas fa-times"></i>
+
+        <button type = "button" class = "cart-item-del-btn">
+            <i class = "fas fa-times"></i>
         </button>
     `;
     cart.appendChild(cartItem);
